@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { storage } from "./lib/storage";
 import { fetchTodayGames } from "./lib/mlb";
 
+import Login        from "./components/Login";
 import TopNav       from "./components/TopNav";
 import ScoreTicker  from "./components/ScoreTicker";
 import Dashboard    from "./views/Dashboard";
@@ -13,6 +14,10 @@ import Estadisticas from "./views/Estadisticas";
 import Settings     from "./views/Settings";
 
 export default function App() {
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem("tga_auth") === "1");
+
+  if (!authed) return <Login onLogin={() => setAuthed(true)} />;
+
   const [view,         setView]         = useState("dashboard");
   const [todayGames,   setTodayGames]   = useState([]);
   const [loadingGames, setLoadingGames] = useState(true);
