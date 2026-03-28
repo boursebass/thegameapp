@@ -11,10 +11,12 @@ const VIEWS = [
 export default function TopNav({ view, onNav, pendingBets = 0 }) {
   return (
     <header style={{
-      background: "#184f6f",
+      background: "rgba(7,21,37,0.6)",
+      backdropFilter: "blur(24px) saturate(180%)",
+      WebkitBackdropFilter: "blur(24px) saturate(180%)",
       position: "sticky", top: 0, zIndex: 200,
       borderBottom: "1px solid rgba(255,255,255,0.08)",
-      boxShadow: "0 2px 12px rgba(0,0,0,0.2)",
+      boxShadow: "0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)",
     }}>
       <div style={{
         maxWidth: "1440px", margin: "0 auto",
@@ -25,7 +27,7 @@ export default function TopNav({ view, onNav, pendingBets = 0 }) {
         <div style={{
           display: "flex", alignItems: "center",
           paddingRight: "24px", marginRight: "4px",
-          borderRight: "1px solid rgba(255,255,255,0.1)",
+          borderRight: "1px solid rgba(255,255,255,0.08)",
           flexShrink: 0,
         }}>
           <span style={{
@@ -34,8 +36,8 @@ export default function TopNav({ view, onNav, pendingBets = 0 }) {
             color: "#fff", letterSpacing: "-0.3px",
             textTransform: "uppercase",
           }}>
-            THE<span style={{ color: "#84cb8a" }}>GAME</span>
-            <span style={{ fontWeight: "300", marginLeft: "2px" }}>APP</span>
+            THE<span style={{ color: "#86efac" }}>GAME</span>
+            <span style={{ fontWeight: "300", marginLeft: "2px", color:"rgba(255,255,255,0.6)" }}>APP</span>
           </span>
         </div>
 
@@ -52,23 +54,24 @@ export default function TopNav({ view, onNav, pendingBets = 0 }) {
                   padding: "0 16px",
                   height: "60px",
                   border: "none",
-                  borderBottom: `3px solid ${active ? "#84cb8a" : "transparent"}`,
+                  borderBottom: `2px solid ${active ? "#2dd4bf" : "transparent"}`,
                   background: "transparent",
-                  color: active ? "#fff" : "rgba(255,255,255,0.55)",
+                  color: active ? "#fff" : "rgba(255,255,255,0.45)",
                   cursor: "pointer",
                   whiteSpace: "nowrap",
                   display: "flex", alignItems: "center", gap: "6px",
                   transition: "color .15s, background .15s",
                 }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.color = "rgba(255,255,255,0.8)"; }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.color = "rgba(255,255,255,0.45)"; }}
               >
                 {v.label}
                 {v.id === "bankroll" && pendingBets > 0 && (
                   <span style={{
-                    background: "#c8102e", color: "#fff",
+                    background: "#f87171", color: "#fff",
                     borderRadius: "10px", padding: "1px 7px",
                     fontSize: "9px", fontWeight: "800",
+                    boxShadow: "0 0 8px rgba(248,113,113,0.5)",
                   }}>{pendingBets}</span>
                 )}
               </button>
@@ -80,12 +83,12 @@ export default function TopNav({ view, onNav, pendingBets = 0 }) {
         <div className="hide-mobile" style={{
           display: "flex", alignItems: "center",
           paddingLeft: "20px",
-          borderLeft: "1px solid rgba(255,255,255,0.08)",
+          borderLeft: "1px solid rgba(255,255,255,0.06)",
           flexShrink: 0,
         }}>
           <span style={{
             fontFamily: "'DM Mono', monospace",
-            fontSize: "9px", color: "rgba(255,255,255,0.35)",
+            fontSize: "9px", color: "rgba(255,255,255,0.25)",
             letterSpacing: "1.5px", textTransform: "uppercase",
           }}>
             {new Date().toLocaleDateString("es-MX",{month:"short",day:"numeric",year:"numeric"}).toUpperCase()}

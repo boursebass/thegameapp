@@ -81,7 +81,14 @@ export default function App() {
   const pendingBets = bets.filter(b => !b.result || b.result === "pending").length;
 
   return (
-    <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", flexDirection:"column" }}>
+    <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", flexDirection:"column", position:"relative" }}>
+      {/* Animated background blobs */}
+      <div className="bg-blob bg-blob-1" />
+      <div className="bg-blob bg-blob-2" />
+      <div className="bg-blob bg-blob-3" />
+      <div className="bg-blob bg-blob-4" />
+
+      <div style={{ position:"relative", zIndex:1, display:"flex", flexDirection:"column", minHeight:"100vh" }}>
       <TopNav view={view} onNav={setView} pendingBets={pendingBets} />
       <ScoreTicker games={todayGames} loading={loadingGames} />
 
@@ -137,6 +144,7 @@ export default function App() {
         )}
         {view === "settings" && <Settings />}
       </main>
+      </div>
     </div>
   );
 }

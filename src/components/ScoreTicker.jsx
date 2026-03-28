@@ -13,30 +13,32 @@ export default function ScoreTicker({ games, loading }) {
 
   return (
     <div style={{
-      background: "#fff",
-      borderBottom: "1px solid #e5e7eb",
+      background: "rgba(7,21,37,0.5)",
+      backdropFilter: "blur(16px) saturate(160%)",
+      WebkitBackdropFilter: "blur(16px) saturate(160%)",
+      borderBottom: "1px solid rgba(255,255,255,0.07)",
       overflowX: "auto", whiteSpace: "nowrap",
       userSelect: "none",
     }}>
-      <div style={{ display:"inline-flex", alignItems:"stretch", minHeight:"72px" }}>
+      <div style={{ display:"inline-flex", alignItems:"stretch", minHeight:"68px" }}>
 
         {/* Date pill */}
         <div style={{
           display:"inline-flex", flexDirection:"column", alignItems:"center",
           justifyContent:"center", padding:"0 16px",
-          borderRight:"1px solid #e5e7eb", minWidth:"54px",
-          background:"#f9fafb", flexShrink:0,
+          borderRight:"1px solid rgba(255,255,255,0.07)", minWidth:"54px",
+          background:"rgba(255,255,255,0.03)", flexShrink:0,
         }}>
-          <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"9px", fontWeight:"700", color:"#374151", letterSpacing:"0.5px" }}>{dayStr}</span>
-          <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"10px", fontWeight:"400", color:"#6b7280", marginTop:"2px" }}>{dtStr}</span>
+          <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"9px", fontWeight:"700", color:"rgba(255,255,255,0.7)", letterSpacing:"0.5px" }}>{dayStr}</span>
+          <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"10px", fontWeight:"400", color:"rgba(255,255,255,0.35)", marginTop:"2px" }}>{dtStr}</span>
         </div>
 
         {loading ? (
-          <div style={{ display:"inline-flex", alignItems:"center", padding:"0 24px", fontFamily:"'Inter',sans-serif", fontSize:"12px", color:"#9ca3af" }}>
+          <div style={{ display:"inline-flex", alignItems:"center", padding:"0 24px", fontFamily:"'Inter',sans-serif", fontSize:"12px", color:"rgba(255,255,255,0.3)" }}>
             Cargando partidos...
           </div>
         ) : display.length === 0 ? (
-          <div style={{ display:"inline-flex", alignItems:"center", padding:"0 24px", fontFamily:"'Inter',sans-serif", fontSize:"12px", color:"#9ca3af" }}>
+          <div style={{ display:"inline-flex", alignItems:"center", padding:"0 24px", fontFamily:"'Inter',sans-serif", fontSize:"12px", color:"rgba(255,255,255,0.3)" }}>
             Sin partidos programados hoy
           </div>
         ) : display.map((g, i) => {
@@ -68,21 +70,22 @@ export default function ScoreTicker({ games, loading }) {
               display:"inline-flex", flexDirection:"column",
               justifyContent:"space-between",
               padding:"8px 14px",
-              borderRight:"1px solid #f3f4f6",
-              minWidth:"160px",
-              background: live ? "#fff8f8" : "#fff",
-              borderTop: live ? "2px solid #c8102e" : "2px solid transparent",
+              borderRight:"1px solid rgba(255,255,255,0.06)",
+              minWidth:"155px",
+              background: live ? "rgba(248,113,113,0.08)" : "transparent",
+              borderTop: live ? "2px solid rgba(248,113,113,0.6)" : "2px solid transparent",
               verticalAlign:"top",
+              transition:"background .2s",
             }}>
               {/* Status */}
               <div style={{ display:"flex", alignItems:"center", gap:"5px", marginBottom:"5px" }}>
                 {live && <span className="live-dot" />}
                 <span style={{
                   fontFamily:"'Inter',sans-serif", fontSize:"10px", fontWeight:"600",
-                  color: live ? "#c8102e" : fin ? "#6b7280" : "#188485",
+                  color: live ? "#f87171" : fin ? "rgba(255,255,255,0.3)" : "#2dd4bf",
                   letterSpacing:"0.2px",
                 }}>
-                  {live ? statusLabel : statusLabel}
+                  {statusLabel}
                 </span>
               </div>
 
@@ -91,15 +94,15 @@ export default function ScoreTicker({ games, loading }) {
                 <span style={{
                   fontFamily:"'Inter',sans-serif", fontSize:"13px",
                   fontWeight: aWin ? "700" : "500",
-                  color: aWin ? "#111827" : "#374151",
+                  color: aWin ? "#fff" : "rgba(255,255,255,0.65)",
                   minWidth:"38px", letterSpacing:"0.3px",
                 }}>{aA}</span>
-                {hRec && <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"9px", color:"#d1d5db", marginLeft:"4px", marginRight:"auto" }}>{aRec?.wins}-{aRec?.losses}</span>}
+                {aRec && <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"9px", color:"rgba(255,255,255,0.2)", marginLeft:"4px", marginRight:"auto" }}>{aRec?.wins}-{aRec?.losses}</span>}
                 {hasScore && (
                   <span style={{
                     fontFamily:"'DM Mono',monospace", fontSize:"14px",
                     fontWeight: aWin ? "700" : "400",
-                    color: aWin ? "#111827" : "#9ca3af",
+                    color: aWin ? "#fff" : "rgba(255,255,255,0.35)",
                     marginLeft:"8px", minWidth:"18px", textAlign:"right",
                   }}>{aR}</span>
                 )}
@@ -110,15 +113,15 @@ export default function ScoreTicker({ games, loading }) {
                 <span style={{
                   fontFamily:"'Inter',sans-serif", fontSize:"13px",
                   fontWeight: hWin ? "700" : "500",
-                  color: hWin ? "#111827" : "#374151",
+                  color: hWin ? "#fff" : "rgba(255,255,255,0.65)",
                   minWidth:"38px", letterSpacing:"0.3px",
                 }}>{hA}</span>
-                {hRec && <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"9px", color:"#d1d5db", marginLeft:"4px", marginRight:"auto" }}>{hRec?.wins}-{hRec?.losses}</span>}
+                {hRec && <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"9px", color:"rgba(255,255,255,0.2)", marginLeft:"4px", marginRight:"auto" }}>{hRec?.wins}-{hRec?.losses}</span>}
                 {hasScore && (
                   <span style={{
                     fontFamily:"'DM Mono',monospace", fontSize:"14px",
                     fontWeight: hWin ? "700" : "400",
-                    color: hWin ? "#111827" : "#9ca3af",
+                    color: hWin ? "#fff" : "rgba(255,255,255,0.35)",
                     marginLeft:"8px", minWidth:"18px", textAlign:"right",
                   }}>{hR}</span>
                 )}
