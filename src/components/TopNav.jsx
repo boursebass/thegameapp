@@ -9,6 +9,12 @@ const VIEWS = [
 ];
 
 export default function TopNav({ view, onNav, pendingBets = 0 }) {
+  const SettingsIcon = () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  );
   return (
     <header style={{
       background: "rgba(24,79,111,0.88)",
@@ -79,20 +85,37 @@ export default function TopNav({ view, onNav, pendingBets = 0 }) {
           })}
         </nav>
 
-        {/* Date */}
-        <div className="hide-mobile" style={{
-          display: "flex", alignItems: "center",
-          paddingLeft: "20px",
+        {/* Date + Settings */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: "12px",
+          paddingLeft: "16px",
           borderLeft: "1px solid rgba(255,255,255,0.08)",
           flexShrink: 0,
         }}>
-          <span style={{
+          <span className="hide-mobile" style={{
             fontFamily: "'DM Mono', monospace",
             fontSize: "9px", color: "rgba(255,255,255,0.3)",
             letterSpacing: "1.5px", textTransform: "uppercase",
           }}>
             {new Date().toLocaleDateString("es-MX",{month:"short",day:"numeric",year:"numeric"}).toUpperCase()}
           </span>
+
+          <button onClick={() => onNav("settings")} style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: "34px", height: "34px",
+            borderRadius: "8px", border: "1px solid rgba(255,255,255,0.12)",
+            background: view === "settings" ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
+            color: view === "settings" ? "#fff" : "rgba(255,255,255,0.45)",
+            cursor: "pointer",
+            backdropFilter: "blur(8px)",
+            transition: "background .15s, color .15s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.14)"; e.currentTarget.style.color = "#fff"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = view === "settings" ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)"; e.currentTarget.style.color = view === "settings" ? "#fff" : "rgba(255,255,255,0.45)"; }}
+          title="Ajustes"
+          >
+            <SettingsIcon />
+          </button>
         </div>
       </div>
     </header>
