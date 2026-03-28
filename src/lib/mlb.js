@@ -15,7 +15,7 @@ export const todayStr = () => new Date().toISOString().split("T")[0];
 
 export async function fetchTodayGames() {
   const d = await api(
-    `https://statsapi.mlb.com/api/v1/schedule?sportId=1,17&date=${todayStr()}&hydrate=probablePitcher,linescore,team,venue`
+    `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${todayStr()}&hydrate=probablePitcher,linescore,team,venue`
   );
   return d.dates?.[0]?.games || [];
 }
