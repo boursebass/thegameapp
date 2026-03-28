@@ -115,11 +115,13 @@ function DivisionTable({ divName, teams }) {
                   {/* Team */}
                   <td style={{ ...td, textAlign:"left", paddingLeft:"14px" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
-                      <span style={{
-                        fontFamily:"'DM Mono',monospace", fontSize:"12px", fontWeight:"700",
-                        color: isFirst ? "var(--teal)" : "var(--navy)",
-                        minWidth:"32px", letterSpacing:"0.5px",
-                      }}>{abbr}</span>
+                      <img
+                        src={`https://midfield.mlbstatic.com/v1/team/${teamId}/spots/72`}
+                        alt={abbr}
+                        width="28" height="28"
+                        style={{ objectFit:"contain", flexShrink:0 }}
+                        onError={e => { e.target.style.display="none"; }}
+                      />
                       <div>
                         <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"12px", fontWeight: isFirst ? "700" : "500", color:"var(--text)", lineHeight:1 }}>
                           {city} <span style={{ fontWeight:"400", color:"var(--muted)" }}>{name}</span>

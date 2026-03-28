@@ -77,7 +77,10 @@ function FeaturedGame({ g, onAnalyze }) {
           {/* Away */}
           <div>
             <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", color:"rgba(255,255,255,0.35)", letterSpacing:"2px", marginBottom:"6px" }}>VISITANTE</div>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"clamp(32px,5vw,48px)", fontWeight:"900", color: aWin?"#fff":"rgba(255,255,255,0.88)", letterSpacing:"-1px", lineHeight:1 }}>{aA}</div>
+            <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"4px" }}>
+              <img src={`https://midfield.mlbstatic.com/v1/team/${g.teams?.away?.team?.id}/spots/72`} alt={aA} width="44" height="44" style={{ objectFit:"contain" }} onError={e=>e.target.style.display="none"} />
+              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"clamp(32px,5vw,48px)", fontWeight:"900", color: aWin?"#fff":"rgba(255,255,255,0.88)", letterSpacing:"-1px", lineHeight:1 }}>{aA}</div>
+            </div>
             <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"13px", color:"rgba(255,255,255,0.45)", marginTop:"4px" }}>{aCity} {aN}</div>
             {aRec && <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"10px", color:"rgba(255,255,255,0.25)", marginTop:"4px" }}>{aRec.wins}–{aRec.losses}</div>}
             <div style={{ marginTop:"14px" }}>
@@ -105,7 +108,10 @@ function FeaturedGame({ g, onAnalyze }) {
           {/* Home */}
           <div style={{ textAlign:"right" }}>
             <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", color:"rgba(255,255,255,0.35)", letterSpacing:"2px", marginBottom:"6px" }}>LOCAL</div>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"clamp(32px,5vw,48px)", fontWeight:"900", color: hWin?"#fff":"rgba(255,255,255,0.88)", letterSpacing:"-1px", lineHeight:1 }}>{hA}</div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:"12px", marginBottom:"4px" }}>
+              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"clamp(32px,5vw,48px)", fontWeight:"900", color: hWin?"#fff":"rgba(255,255,255,0.88)", letterSpacing:"-1px", lineHeight:1 }}>{hA}</div>
+              <img src={`https://midfield.mlbstatic.com/v1/team/${g.teams?.home?.team?.id}/spots/72`} alt={hA} width="44" height="44" style={{ objectFit:"contain" }} onError={e=>e.target.style.display="none"} />
+            </div>
             <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"13px", color:"rgba(255,255,255,0.45)", marginTop:"4px" }}>{hCity} {hN}</div>
             {hRec && <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"10px", color:"rgba(255,255,255,0.25)", marginTop:"4px" }}>{hRec.wins}–{hRec.losses}</div>}
             <div style={{ marginTop:"14px" }}>
@@ -334,6 +340,12 @@ export default function Dashboard({ todayGames, loadingGames, predictions, bankr
                     return (
                       <div key={d.divisionName} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 8px", borderRadius:"6px", marginBottom:"3px", background:"rgba(24,132,133,0.04)" }}>
                         <div style={{ display:"flex", gap:"8px", alignItems:"center" }}>
+                          <img
+                            src={`https://midfield.mlbstatic.com/v1/team/${t.team?.id}/spots/72`}
+                            alt={abbr} width="22" height="22"
+                            style={{ objectFit:"contain" }}
+                            onError={e => e.target.style.display="none"}
+                          />
                           <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", fontWeight:"700", color:"var(--teal)", minWidth:"26px" }}>{abbr}</span>
                           <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"11px", color:"var(--muted)" }}>{city}</span>
                         </div>
