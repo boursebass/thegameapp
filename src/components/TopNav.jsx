@@ -5,7 +5,6 @@ const VIEWS = [
   { id:"predicciones", label:"Predicciones" },
   { id:"bankroll",     label:"Bankroll"     },
   { id:"estadisticas", label:"Estadísticas" },
-  { id:"settings",     label:"Ajustes"      },
 ];
 
 export default function TopNav({ view, onNav, pendingBets = 0 }) {
