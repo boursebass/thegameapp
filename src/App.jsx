@@ -13,22 +13,24 @@ import Bankroll     from "./views/Bankroll";
 import Estadisticas from "./views/Estadisticas";
 import Settings     from "./views/Settings";
 
+// ── Auth wrapper ─────────────────────────────────────────────────────────────
 export default function App() {
   const [authed, setAuthed] = useState(() => sessionStorage.getItem("tga_auth") === "1");
-
   if (!authed) return <Login onLogin={() => setAuthed(true)} />;
+  return <Main />;
+}
 
+// ── Main app (all hooks safe here — always rendered) ─────────────────────────
+function Main() {
   const [view,         setView]         = useState("dashboard");
   const [todayGames,   setTodayGames]   = useState([]);
   const [loadingGames, setLoadingGames] = useState(true);
   const [selectedGame, setSelectedGame] = useState(null);
 
-  // Persistent state
   const [predictions, setPredictionsState] = useState(() => storage.getPredictions());
   const [bets,        setBetsState]        = useState(() => storage.getBets());
   const [bankroll,    setBankrollState]    = useState(() => storage.getBankroll());
 
-  // Sync to storage
   const setPredictions = useCallback(v => {
     const val = typeof v === "function" ? v(storage.getPredictions()) : v;
     storage.setPredictions(val);
@@ -46,7 +48,6 @@ export default function App() {
     setBankrollState(v);
   }, []);
 
-  // Load today's games once
   useEffect(() => {
     fetchTodayGames()
       .then(setTodayGames)
@@ -54,7 +55,6 @@ export default function App() {
       .finally(() => setLoadingGames(false));
   }, []);
 
-  // Refresh live scores every 60s
   useEffect(() => {
     const id = setInterval(() => {
       fetchTodayGames().then(setTodayGames).catch(() => {});
@@ -74,76 +74,53 @@ export default function App() {
     setView("bankroll");
   }
 
-  function pickGame(game) {
-    setSelectedGame(game);
-  }
-
   const pendingBets = bets.filter(b => !b.result || b.result === "pending").length;
 
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", flexDirection:"column", position:"relative" }}>
-      {/* Animated background blobs */}
       <div className="bg-blob bg-blob-1" />
       <div className="bg-blob bg-blob-2" />
       <div className="bg-blob bg-blob-3" />
       <div className="bg-blob bg-blob-4" />
 
       <div style={{ position:"relative", zIndex:1, display:"flex", flexDirection:"column", minHeight:"100vh" }}>
-      <TopNav view={view} onNav={setView} pendingBets={pendingBets} />
-      <ScoreTicker games={todayGames} loading={loadingGames} />
+        <TopNav view={view} onNav={setView} pendingBets={pendingBets} />
+        <ScoreTicker games={todayGames} loading={loadingGames} />
 
-      <main style={{
-        flex:1,
-        maxWidth:"1440px",
-        width:"100%",
-        margin:"0 auto",
-        padding:"clamp(16px,2.5vw,32px) clamp(12px,2.5vw,28px)",
-      }}>
-        {view === "dashboard" && (
-          <Dashboard
-            todayGames={todayGames}
-            loadingGames={loadingGames}
-            predictions={predictions}
-            bankroll={bankroll}
-            bets={bets}
-            onPickGame={pickGame}
-            onNav={setView}
-          />
-        )}
-        {view === "analizar" && (
-          <Analizar
-            todayGames={todayGames}
-            loadingGames={loadingGames}
-            selectedGame={selectedGame}
-            onSavePrediction={savePrediction}
-            onAddBet={addBet}
-            bankroll={bankroll}
-          />
-        )}
-        {view === "equipos" && <Equipos />}
-        {view === "predicciones" && (
-          <Predicciones
-            predictions={predictions}
-            setPredictions={setPredictions}
-          />
-        )}
-        {view === "bankroll" && (
-          <Bankroll
-            bankroll={bankroll}
-            setBankroll={setBankroll}
-            bets={bets}
-            setBets={setBets}
-          />
-        )}
-        {view === "estadisticas" && (
-          <Estadisticas
-            bets={bets}
-            predictions={predictions}
-            bankroll={bankroll}
-          />
-        )}
-        {view === "settings" && <Settings />}
-      </main>
+        <main style={{
+          flex:1,
+          maxWidth:"1440px",
+          width:"100%",
+          margin:"0 auto",
+          padding:"clamp(16px,2.5vw,32px) clamp(12px,2.5vw,28px)",
+        }}>
+          {view === "dashboard" && (
+            <Dashboard
+              todayGames={todayGames}
+              loadingGames={loadingGames}
+              predictions={predictions}
+              bankroll={bankroll}
+              bets={bets}
+              onPickGame={g => setSelectedGame(g)}
+              onNav={setView}
+            />
+          )}
+          {view === "analizar" && (
+            <Analizar
+              todayGames={todayGames}
+              loadingGames={loadingGames}
+              selectedGame={selectedGame}
+              onSavePrediction={savePrediction}
+              onAddBet={addBet}
+              bankroll={bankroll}
+            />
+          )}
+          {view === "equipos"      && <Equipos />}
+          {view === "predicciones" && <Predicciones predictions={predictions} setPredictions={setPredictions} />}
+          {view === "bankroll"     && <Bankroll bankroll={bankroll} setBankroll={setBankroll} bets={bets} setBets={setBets} />}
+          {view === "estadisticas" && <Estadisticas bets={bets} predictions={predictions} bankroll={bankroll} />}
+          {view === "settings"     && <Settings />}
+        </main>
       </div>
     </div>
   );
