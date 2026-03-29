@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { computeBankroll } from "../lib/math";
 import { fetchStandingsAll } from "../lib/mlb";
 import { MLB_TEAMS } from "../constants/teams";
+import { getStadiumPhoto } from "../constants/stadiumPhotos";
 
 const S = {
   card:  { background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius:"var(--r)", boxShadow:"var(--shadow)" },
@@ -10,6 +11,16 @@ const S = {
 
 /* ── Featured hero ─────────────────────────────────────────────── */
 function FeaturedGame({ g, onAnalyze }) {
+  const [bgImg, setBgImg] = useState(null);
+
+  useEffect(() => {
+    if (!g?.gamePk) return;
+    const homeId = g.teams?.home?.team?.id;
+    const awayId = g.teams?.away?.team?.id;
+    const local  = getStadiumPhoto(homeId, awayId);
+    setBgImg(local || null);
+  }, [g?.gamePk]);
+
   if (!g) return (
     <div style={{ ...S.card, height:"360px", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--muted)", fontSize:"13px" }}>
       Sin partidos hoy
@@ -46,89 +57,123 @@ function FeaturedGame({ g, onAnalyze }) {
     <div style={{
       borderRadius:"var(--r)", overflow:"hidden",
       background:"linear-gradient(160deg, #0a1e30 0%, #184f6f 55%, #0d3535 100%)",
-      position:"relative", height:"360px",
-      display:"flex", flexDirection:"column", justifyContent:"space-between",
-      cursor:"pointer",
+      position:"relative",
+      display:"flex", flexDirection:"column",
+      cursor:"pointer", minHeight:"320px",
     }} onClick={onAnalyze}>
-      {/* Decorative blobs */}
-      <div style={{ position:"absolute", inset:0, overflow:"hidden", pointerEvents:"none" }}>
-        <div style={{ position:"absolute", width:"400px", height:"400px", borderRadius:"50%", background:"rgba(24,132,133,0.25)", filter:"blur(70px)", top:"-100px", right:"-50px" }} />
-        <div style={{ position:"absolute", width:"300px", height:"300px", borderRadius:"50%", background:"rgba(132,203,138,0.12)", filter:"blur(60px)", bottom:"-80px", left:"10%" }} />
-      </div>
+      {/* Stadium photo background */}
+      {bgImg && (
+        <div style={{
+          position:"absolute", inset:0,
+          backgroundImage:`url(${bgImg})`,
+          backgroundSize:"cover", backgroundPosition:"center 40%",
+          opacity:0.75,
+          transition:"opacity 0.6s ease",
+        }} />
+      )}
+      {/* Dark gradient overlay for readability */}
+      <div style={{
+        position:"absolute", inset:0,
+        background: bgImg
+          ? "linear-gradient(160deg, rgba(6,14,22,0.55) 0%, rgba(10,30,50,0.35) 50%, rgba(4,20,20,0.60) 100%)"
+          : "linear-gradient(160deg, rgba(10,30,48,0.6) 0%, rgba(24,79,111,0.3) 55%, rgba(13,53,53,0.5) 100%)",
+        pointerEvents:"none",
+      }} />
 
-      {/* Status */}
-      <div style={{ padding:"16px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"relative" }}>
+      {/* Status bar */}
+      <div style={{ padding:"14px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"relative", zIndex:1 }}>
         <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
           {live && <span className="live-dot" />}
-          <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", fontWeight:"700", letterSpacing:"1px",
-            color: live?"#f87171": fin?"rgba(255,255,255,0.4)":"#2dd4bf" }}>
+          <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", fontWeight:"700", letterSpacing:"1.5px",
+            color: live?"#f87171": fin?"rgba(255,255,255,0.35)":"#2dd4bf" }}>
             {live ? `EN VIVO · ${statusLabel}` : fin ? "FINAL" : `HOY · ${statusLabel}`}
           </span>
         </div>
-        <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", color:"rgba(255,255,255,0.25)" }}>
+        <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", color:"rgba(255,255,255,0.55)", letterSpacing:"0.5px" }}>
           {g.venue?.name || ""}
         </span>
       </div>
 
-      {/* Matchup */}
-      <div style={{ padding:"0 28px", position:"relative", flex:1, display:"flex", flexDirection:"column", justifyContent:"center" }}>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", alignItems:"center", gap:"16px" }}>
+      {/* Matchup — flex row: Away | Score | Home */}
+      <div style={{ flex:1, padding:"16px 32px 24px", position:"relative", zIndex:1, display:"flex", alignItems:"center", gap:"0" }}>
 
-          {/* Away */}
-          <div>
-            <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", color:"rgba(255,255,255,0.35)", letterSpacing:"2px", marginBottom:"6px" }}>VISITANTE</div>
-            <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"4px" }}>
-              <img src={`https://midfield.mlbstatic.com/v1/team/${g.teams?.away?.team?.id}/spots/72`} alt={aA} width="44" height="44" style={{ objectFit:"contain" }} onError={e=>e.target.style.display="none"} />
-              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"clamp(32px,5vw,48px)", fontWeight:"900", color: aWin?"#fff":"rgba(255,255,255,0.88)", letterSpacing:"-1px", lineHeight:1 }}>{aA}</div>
-            </div>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"13px", color:"rgba(255,255,255,0.45)", marginTop:"4px" }}>{aCity} {aN}</div>
-            {aRec && <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"10px", color:"rgba(255,255,255,0.25)", marginTop:"4px" }}>{aRec.wins}–{aRec.losses}</div>}
-            <div style={{ marginTop:"14px" }}>
-              <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"8px", color:"rgba(255,255,255,0.25)", letterSpacing:"1.5px" }}>PITCHER</div>
-              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"12px", color:"rgba(255,255,255,0.6)", marginTop:"2px" }}>{aPit}</div>
+        {/* Away team */}
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", color:"#2dd4bf", letterSpacing:"2px", marginBottom:"10px" }}>VISITANTE</div>
+          <div style={{ display:"flex", alignItems:"center", gap:"14px", marginBottom:"6px" }}>
+            <img
+              src={`https://midfield.mlbstatic.com/v1/team/${g.teams?.away?.team?.id}/spots/72`}
+              alt={aA} width="52" height="52"
+              style={{ objectFit:"contain", flexShrink:0, filter:"drop-shadow(0 2px 8px rgba(0,0,0,0.5))" }}
+              onError={e=>e.target.style.display="none"}
+            />
+            <div>
+              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"42px", fontWeight:"900",
+                color:"#ffffff", letterSpacing:"-2px", lineHeight:1,
+                textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>{aA}</div>
+              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"13px", color:"rgba(255,255,255,0.75)", marginTop:"3px", whiteSpace:"nowrap" }}>{aCity} {aN}</div>
             </div>
           </div>
-
-          {/* Center score */}
-          <div style={{ textAlign:"center" }}>
-            {hasScore ? (
-              <div style={{ display:"flex", alignItems:"center", gap:"14px", justifyContent:"center" }}>
-                <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"clamp(40px,7vw,60px)", fontWeight:"700", color: aWin?"#fff":"rgba(255,255,255,0.45)", lineHeight:1 }}>{aR}</span>
-                <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"18px", color:"rgba(255,255,255,0.15)" }}>–</span>
-                <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"clamp(40px,7vw,60px)", fontWeight:"700", color: hWin?"#fff":"rgba(255,255,255,0.45)", lineHeight:1 }}>{hR}</span>
-              </div>
-            ) : (
-              <div>
-                <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", color:"rgba(255,255,255,0.2)", letterSpacing:"3px", marginBottom:"8px" }}>VS</div>
-                <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"26px", fontWeight:"800", color:"rgba(255,255,255,0.9)" }}>{gt}</div>
-              </div>
-            )}
+          {aRec && <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", color:"rgba(255,255,255,0.6)", marginBottom:"10px" }}>{aRec.wins}–{aRec.losses}</div>}
+          <div style={{ borderTop:"1px solid rgba(255,255,255,0.15)", paddingTop:"10px" }}>
+            <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"8px", color:"#84cb8a", letterSpacing:"2px", marginBottom:"3px" }}>PITCHER</div>
+            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"12px", color:"rgba(255,255,255,0.85)", fontWeight:"500" }}>{aPit}</div>
           </div>
+        </div>
 
-          {/* Home */}
-          <div style={{ textAlign:"right" }}>
-            <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", color:"rgba(255,255,255,0.35)", letterSpacing:"2px", marginBottom:"6px" }}>LOCAL</div>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:"12px", marginBottom:"4px" }}>
-              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"clamp(32px,5vw,48px)", fontWeight:"900", color: hWin?"#fff":"rgba(255,255,255,0.88)", letterSpacing:"-1px", lineHeight:1 }}>{hA}</div>
-              <img src={`https://midfield.mlbstatic.com/v1/team/${g.teams?.home?.team?.id}/spots/72`} alt={hA} width="44" height="44" style={{ objectFit:"contain" }} onError={e=>e.target.style.display="none"} />
+        {/* Center score / VS */}
+        <div style={{ width:"160px", flexShrink:0, textAlign:"center", padding:"0 8px" }}>
+          {hasScore ? (
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"12px" }}>
+              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"56px", fontWeight:"700",
+                color: aWin?"#fff":"rgba(255,255,255,0.65)", lineHeight:1,
+                textShadow:"0 2px 16px rgba(0,0,0,0.5)" }}>{aR}</span>
+              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"20px", color:"rgba(255,255,255,0.3)" }}>–</span>
+              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"56px", fontWeight:"700",
+                color: hWin?"#fff":"rgba(255,255,255,0.65)", lineHeight:1,
+                textShadow:"0 2px 16px rgba(0,0,0,0.5)" }}>{hR}</span>
             </div>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"13px", color:"rgba(255,255,255,0.45)", marginTop:"4px" }}>{hCity} {hN}</div>
-            {hRec && <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"10px", color:"rgba(255,255,255,0.25)", marginTop:"4px" }}>{hRec.wins}–{hRec.losses}</div>}
-            <div style={{ marginTop:"14px" }}>
-              <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"8px", color:"rgba(255,255,255,0.25)", letterSpacing:"1.5px", textAlign:"right" }}>PITCHER</div>
-              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"12px", color:"rgba(255,255,255,0.6)", marginTop:"2px", textAlign:"right" }}>{hPit}</div>
+          ) : (
+            <div>
+              <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"10px", color:"rgba(255,255,255,0.45)", letterSpacing:"4px", marginBottom:"10px" }}>VS</div>
+              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"30px", fontWeight:"800", color:"#ffffff", letterSpacing:"-0.5px", textShadow:"0 2px 12px rgba(0,0,0,0.5)" }}>{gt}</div>
+              <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", color:"#2dd4bf", letterSpacing:"1px", marginTop:"6px" }}>HORA LOCAL</div>
             </div>
+          )}
+        </div>
+
+        {/* Home team */}
+        <div style={{ flex:1, minWidth:0, textAlign:"right" }}>
+          <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", color:"#2dd4bf", letterSpacing:"2px", marginBottom:"10px" }}>LOCAL</div>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:"14px", marginBottom:"6px" }}>
+            <div>
+              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"42px", fontWeight:"900",
+                color:"#ffffff", letterSpacing:"-2px", lineHeight:1,
+                textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>{hA}</div>
+              <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"13px", color:"rgba(255,255,255,0.75)", marginTop:"3px", whiteSpace:"nowrap" }}>{hCity} {hN}</div>
+            </div>
+            <img
+              src={`https://midfield.mlbstatic.com/v1/team/${g.teams?.home?.team?.id}/spots/72`}
+              alt={hA} width="52" height="52"
+              style={{ objectFit:"contain", flexShrink:0, filter:"drop-shadow(0 2px 8px rgba(0,0,0,0.5))" }}
+              onError={e=>e.target.style.display="none"}
+            />
+          </div>
+          {hRec && <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", color:"rgba(255,255,255,0.6)", marginBottom:"10px" }}>{hRec.wins}–{hRec.losses}</div>}
+          <div style={{ borderTop:"1px solid rgba(255,255,255,0.15)", paddingTop:"10px" }}>
+            <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"8px", color:"#84cb8a", letterSpacing:"2px", marginBottom:"3px", textAlign:"right" }}>PITCHER</div>
+            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"12px", color:"rgba(255,255,255,0.85)", fontWeight:"500", textAlign:"right" }}>{hPit}</div>
           </div>
         </div>
       </div>
 
       {/* Bottom CTA */}
-      <div style={{ padding:"16px 24px", borderTop:"1px solid rgba(255,255,255,0.07)", display:"flex", alignItems:"center", justifyContent:"space-between", position:"relative" }}>
-        <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", color:"rgba(255,255,255,0.25)", letterSpacing:"0.5px" }}>
-          PARTIDO DESTACADO
+      <div style={{ padding:"12px 24px", borderTop:"1px solid rgba(255,255,255,0.06)", display:"flex", alignItems:"center", justifyContent:"space-between", position:"relative", zIndex:1 }}>
+        <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", color:"rgba(255,255,255,0.5)", letterSpacing:"1px" }}>
+          PARTIDO DESTACADO · CLICK PARA ANALIZAR
         </span>
         <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"12px", fontWeight:"700", color:"#2dd4bf" }}>
-          Analizar →
+          Analizar con IA →
         </span>
       </div>
     </div>
@@ -137,10 +182,12 @@ function FeaturedGame({ g, onAnalyze }) {
 
 /* ── Mini game card ─────────────────────────────────────────────── */
 function MiniGame({ g, onAnalyze }) {
-  const hA = MLB_TEAMS.find(t => t.id === g.teams?.home?.team?.id)?.abbr || "?";
-  const aA = MLB_TEAMS.find(t => t.id === g.teams?.away?.team?.id)?.abbr || "?";
-  const hR = g.teams?.home?.score;
-  const aR = g.teams?.away?.score;
+  const hId = g.teams?.home?.team?.id;
+  const aId = g.teams?.away?.team?.id;
+  const hA  = MLB_TEAMS.find(t => t.id === hId)?.abbr || "?";
+  const aA  = MLB_TEAMS.find(t => t.id === aId)?.abbr || "?";
+  const hR  = g.teams?.home?.score;
+  const aR  = g.teams?.away?.score;
   const hasScore = hR !== undefined && aR !== undefined;
   const live = g.status?.detailedState === "In Progress";
   const fin  = ["Final","Game Over","Completed Early"].includes(g.status?.detailedState);
@@ -153,20 +200,35 @@ function MiniGame({ g, onAnalyze }) {
     ? `${inningState==="Bottom"?"▼":inningState==="Top"?"▲":""}${inningOrd}`
     : fin ? "Final" : gt;
 
+  const teams = [
+    { id:aId, abbr:aA, r:aR, win:aWin },
+    { id:hId, abbr:hA, r:hR, win:hWin },
+  ];
+
   return (
     <div className="card-hover" onClick={onAnalyze} style={{
-      ...S.card, padding:"11px 14px", cursor:"pointer", minWidth:"130px", flexShrink:0,
+      ...S.card, padding:"10px 12px", cursor:"pointer", minWidth:"148px", flexShrink:0,
       borderTop:`2px solid ${live?"var(--red)":fin?"var(--border)":"var(--teal)"}`,
     }}>
-      <div style={{ marginBottom:"7px" }}>
+      {/* Status */}
+      <div style={{ marginBottom:"8px" }}>
         <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", fontWeight:"600",
           color: live?"var(--red)":fin?"var(--muted)":"var(--teal)" }}>
           {live && "● "}{statusLabel}
         </span>
       </div>
-      {[{abbr:aA, r:aR, win:aWin},{abbr:hA, r:hR, win:hWin}].map((t,i) => (
-        <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:i===0?"4px":0 }}>
-          <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"12px", fontWeight:t.win?"700":"500", color:t.win?"var(--navy)":"var(--text)" }}>{t.abbr}</span>
+      {/* Teams */}
+      {teams.map((t, i) => (
+        <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:i===0?"5px":0 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
+            <img
+              src={`https://midfield.mlbstatic.com/v1/team/${t.id}/spots/72`}
+              alt={t.abbr} width="20" height="20"
+              style={{ objectFit:"contain", flexShrink:0 }}
+              onError={e=>e.target.style.display="none"}
+            />
+            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"12px", fontWeight:t.win?"700":"500", color:t.win?"var(--navy)":"var(--text)" }}>{t.abbr}</span>
+          </div>
           {hasScore && <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"13px", fontWeight:t.win?"700":"400", color:t.win?"var(--navy)":"var(--muted)" }}>{t.r}</span>}
         </div>
       ))}
@@ -291,7 +353,7 @@ export default function Dashboard({ todayGames, loadingGames, predictions, bankr
       </div>
 
       {/* ── MLB-style layout: Hero left + News right ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 340px", gap:"20px", alignItems:"start" }}>
+      <div style={{ display:"grid", gridTemplateColumns:"minmax(0,1fr) 360px", gap:"22px", alignItems:"start" }}>
 
         {/* LEFT */}
         <div>

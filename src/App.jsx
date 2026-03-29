@@ -4,7 +4,6 @@ import { fetchTodayGames } from "./lib/mlb";
 
 import Login        from "./components/Login";
 import TopNav       from "./components/TopNav";
-import ScoreTicker  from "./components/ScoreTicker";
 import Dashboard    from "./views/Dashboard";
 import Analizar     from "./views/Analizar";
 import Equipos      from "./views/Equipos";
@@ -85,7 +84,6 @@ function Main() {
 
       <div style={{ position:"relative", zIndex:1, display:"flex", flexDirection:"column", minHeight:"100vh" }}>
         <TopNav view={view} onNav={setView} pendingBets={pendingBets} />
-        <ScoreTicker games={todayGames} loading={loadingGames} />
 
         <main style={{
           flex:1,
