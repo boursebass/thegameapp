@@ -19,4 +19,10 @@ export const storage = {
   setInstructions: (v)   => localStorage.setItem("tga_instructions", v),
   getCachedPred:   (k)   => localStorage.getItem(`tga_pred_${k}`) || "",
   setCachedPred:   (k,v) => localStorage.setItem(`tga_pred_${k}`, v),
+  getPartidas:     ()    => get("tga_partidas", []),
+  setPartidas:     (v)   => set("tga_partidas", v),
+  getStraightPicks:()    => get("tga_straight_picks", []),
+  setStraightPicks:(v)   => set("tga_straight_picks", v),
+  getParlays:      ()    => get("tga_parlays", []),
+  setParlays:      (v)   => set("tga_parlays", v),
 };

@@ -8,7 +8,7 @@ import Dashboard    from "./views/Dashboard";
 import Analizar     from "./views/Analizar";
 import Equipos      from "./views/Equipos";
 import Predicciones from "./views/Predicciones";
-import Bankroll     from "./views/Bankroll";
+import Picks        from "./views/Picks";
 import Estadisticas from "./views/Estadisticas";
 import Settings     from "./views/Settings";
 
@@ -26,9 +26,12 @@ function Main() {
   const [loadingGames, setLoadingGames] = useState(true);
   const [selectedGame, setSelectedGame] = useState(null);
 
-  const [predictions, setPredictionsState] = useState(() => storage.getPredictions());
-  const [bets,        setBetsState]        = useState(() => storage.getBets());
-  const [bankroll,    setBankrollState]    = useState(() => storage.getBankroll());
+  const [predictions,    setPredictionsState]    = useState(() => storage.getPredictions());
+  const [bets,           setBetsState]           = useState(() => storage.getBets());
+  const [bankroll,       setBankrollState]       = useState(() => storage.getBankroll());
+  const [partidas,       setPartidasState]       = useState(() => storage.getPartidas());
+  const [straightPicks,  setStraightPicksState]  = useState(() => storage.getStraightPicks());
+  const [parlays,        setParlaysState]        = useState(() => storage.getParlays());
 
   const setPredictions = useCallback(v => {
     const val = typeof v === "function" ? v(storage.getPredictions()) : v;
@@ -47,9 +50,33 @@ function Main() {
     setBankrollState(v);
   }, []);
 
+  const setPartidas = useCallback(v => {
+    const val = typeof v === "function" ? v(storage.getPartidas()) : v;
+    storage.setPartidas(val); setPartidasState(val);
+  }, []);
+  const setStraightPicks = useCallback(v => {
+    const val = typeof v === "function" ? v(storage.getStraightPicks()) : v;
+    storage.setStraightPicks(val); setStraightPicksState(val);
+  }, []);
+  const setParlays = useCallback(v => {
+    const val = typeof v === "function" ? v(storage.getParlays()) : v;
+    storage.setParlays(val); setParlaysState(val);
+  }, []);
+
   useEffect(() => {
     fetchTodayGames()
-      .then(setTodayGames)
+      .then(games => {
+        setTodayGames(games);
+        // Seleccionar el primer partido por defecto si no hay uno seleccionado
+        if (games.length > 0 && !selectedGame) {
+          const sorted = [
+            ...games.filter(g => g.status?.detailedState === "In Progress"),
+            ...games.filter(g => ["Scheduled","Pre-Game","Warmup"].includes(g.status?.detailedState)),
+            ...games.filter(g => ["Final","Game Over","Completed Early"].includes(g.status?.detailedState)),
+          ];
+          if (sorted[0]) setSelectedGame(sorted[0]);
+        }
+      })
       .catch(() => setTodayGames([]))
       .finally(() => setLoadingGames(false));
   }, []);
@@ -73,7 +100,7 @@ function Main() {
     setView("bankroll");
   }
 
-  const pendingBets = bets.filter(b => !b.result || b.result === "pending").length;
+  const pendingBets = straightPicks.filter(p => p.result === "pending").length;
 
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", flexDirection:"column", position:"relative" }}>
@@ -108,14 +135,23 @@ function Main() {
               todayGames={todayGames}
               loadingGames={loadingGames}
               selectedGame={selectedGame}
+              setSelectedGame={setSelectedGame}
               onSavePrediction={savePrediction}
               onAddBet={addBet}
               bankroll={bankroll}
             />
           )}
           {view === "equipos"      && <Equipos />}
-          {view === "predicciones" && <Predicciones predictions={predictions} setPredictions={setPredictions} />}
-          {view === "bankroll"     && <Bankroll bankroll={bankroll} setBankroll={setBankroll} bets={bets} setBets={setBets} />}
+          {/* Predicciones — oculta del nav, data guardada en background para Estadísticas */}
+          {view === "picks" && (
+            <Picks
+              todayGames={todayGames}
+              partidas={partidas}       setPartidas={setPartidas}
+              picks={straightPicks}     setPicks={setStraightPicks}
+              parlays={parlays}         setParlays={setParlays}
+            />
+          )}
+          {/* Bankroll legacy — reemplazado por Picks */}
           {view === "estadisticas" && <Estadisticas bets={bets} predictions={predictions} bankroll={bankroll} />}
           {view === "settings"     && <Settings />}
         </main>

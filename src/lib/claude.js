@@ -189,3 +189,95 @@ export const getResumen      = t => { const m = t.match(/\*\*RESUMEN\*\*\s*([\s\
 export const getParlayLine   = t => { const m = t.match(/\*\*PARLAY \+?EV\*\*:\s*(.+)/i); return m ? m[1].trim() : ""; };
 export const getInvalidadores= t => { const m = t.match(/\*\*INVALIDADORES\*\*:\s*([\s\S]*?)(?=\*\*|$)/i); return m ? m[1].trim() : ""; };
 export const getPassLine     = t => { const m = t.match(/\*\*PASS\*\*:\s*(.+)/i); return m ? m[1].trim() : ""; };
+
+// ── DAILY PICKS ───────────────────────────────────────────────────────────
+export function buildDailyPicksPrompt(games, bankroll, casino) {
+  const fecha = new Date().toLocaleDateString("es-MX", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+  const lista = games.map((g, i) => {
+    const hName = g.teams?.home?.team?.name  || "?";
+    const aName = g.teams?.away?.team?.name  || "?";
+    const hAbbr = g.teams?.home?.team?.abbreviation || "?";
+    const aAbbr = g.teams?.away?.team?.abbreviation || "?";
+    const hPit  = g.teams?.home?.probablePitcher?.fullName || "TBD";
+    const aPit  = g.teams?.away?.probablePitcher?.fullName || "TBD";
+    const time  = g.gameDate ? new Date(g.gameDate).toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"}) : "--";
+    const live  = g.status?.detailedState === "In Progress";
+    const fin   = ["Final","Game Over","Completed Early"].includes(g.status?.detailedState);
+    return `${i+1}. ${aName} (${aAbbr}) VISITA vs ${hName} (${hAbbr}) LOCAL — ${live?"EN VIVO":fin?"FINAL":time}\n   Lanzadores: ${aPit} (V) vs ${hPit} (L)`;
+  }).join("\n\n");
+
+  return `Eres un analista de apuestas MLB de élite. Hoy es ${fecha}.
+El apostador juega en ${casino} con un bankroll de sesión de $${bankroll} USD.
+
+PARTIDOS DE HOY (${games.length} juegos):
+${lista}
+
+TAREA: Analiza cada partido con los datos disponibles e identifica los picks con mayor valor esperado para HOY. Sé selectivo — es mejor 2 picks sólidos que 6 mediocres.
+
+REGLA CORE: Solo recomienda picks donde estimes prob real > prob implícita del momio típico del mercado.
+
+FORMATO OBLIGATORIO — usa exactamente estas etiquetas:
+
+---PICK---
+Partido: [ABBR_V vs ABBR_L]
+Mercado: [Moneyline / Run Line / Over X.X / Under X.X]
+Pick: [selección exacta, ej: NYY / Over 8.5 / LAD -1.5]
+Momio: [momio americano estimado, ej: -130]
+Confianza: [50-85]%
+Unidades: [0.5 / 1 / 1.5 / 2]
+Razon: [1 línea — el edge específico]
+---FIN---
+
+(repite para cada pick recomendado, máximo 4)
+
+---PARLAY---
+[Lista los picks del parlay en formato "ABBR_V vs ABBR_L | Mercado | Pick | Momio", uno por línea]
+[Solo incluye parlay si hay 2-3 picks independientes con valor. Si no, escribe "Sin parlay de valor hoy."]
+---FIN_PARLAY---
+
+---RESUMEN_DIA---
+[2-3 líneas resumiendo la jornada y el razonamiento general]
+---FIN_RESUMEN---`;
+}
+
+export function parseDailyPicks(text) {
+  // Picks
+  const picks = [];
+  const blocks = text.split(/---PICK---/).slice(1);
+  for (const b of blocks) {
+    const end   = b.indexOf("---FIN---");
+    const block = end >= 0 ? b.slice(0, end) : b;
+    const get   = key => { const m = block.match(new RegExp(key+":\\s*(.+)","i")); return m ? m[1].trim() : ""; };
+    const mercado = get("Mercado"); if (!mercado) continue;
+    picks.push({
+      id:         Date.now() + Math.random(),
+      partido:    get("Partido"),
+      mercado,
+      pick:       get("Pick"),
+      momio:      get("Momio"),
+      confianza:  parseInt(get("Confianza")) || 60,
+      unidades:   parseFloat(get("Unidades")) || 1,
+      razon:      get("Razon"),
+      result:     "pending",
+    });
+  }
+
+  // Parlay legs
+  const parlayMatch = text.match(/---PARLAY---([\s\S]*?)---FIN_PARLAY---/i);
+  const parlayLegs  = [];
+  if (parlayMatch) {
+    const lines = parlayMatch[1].trim().split("\n").filter(l => l.includes("|"));
+    for (const line of lines) {
+      const parts = line.split("|").map(s => s.trim());
+      if (parts.length >= 4) {
+        parlayLegs.push({ id: Date.now() + Math.random(), partido: parts[0], mercado: parts[1], pick: parts[2], momio: parts[3] });
+      }
+    }
+  }
+
+  // Resumen
+  const resumenMatch = text.match(/---RESUMEN_DIA---([\s\S]*?)---FIN_RESUMEN---/i);
+  const resumen = resumenMatch ? resumenMatch[1].trim() : "";
+
+  return { picks, parlayLegs, resumen };
+}

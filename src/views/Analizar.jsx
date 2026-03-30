@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Thermometer, Wind, Droplets, Building2, TrendingUp, BarChart2, ArrowRightLeft } from "lucide-react";
 import { MLB_TEAMS } from "../constants/teams";
 import { getStadiumPhoto } from "../constants/stadiumPhotos";
 import {
@@ -12,6 +13,7 @@ import { storage } from "../lib/storage";
 const S = {
   card:  { background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius:"var(--r)", boxShadow:"var(--shadow)" },
   label: { fontFamily:"'DM Mono',monospace", fontSize:"9px", letterSpacing:"2px", color:"var(--muted)", textTransform:"uppercase", display:"block", marginBottom:"5px" },
+  head:  { fontFamily:"'Inter',sans-serif", fontSize:"11px", fontWeight:"800", color:"var(--navy)", letterSpacing:"0.8px", textTransform:"uppercase", display:"block", marginBottom:"12px" },
 };
 
 /* ── Pick card ── */
@@ -89,9 +91,9 @@ function PitcherBox({ name, stats, last3, side }) {
   );
   return (
     <div style={{ flex:1, minWidth:0, textAlign:side==="right"?"right":"left" }}>
-      <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"14px", fontWeight:"700", color:"var(--navy)", marginBottom:"6px" }}>{name}</div>
+      <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"16px", fontWeight:"800", color:"var(--navy)", marginBottom:"8px", letterSpacing:"-0.3px" }}>{name}</div>
       {stats ? (
-        <div style={{ display:"flex", gap:"10px", flexWrap:"wrap", justifyContent:side==="right"?"flex-end":"flex-start" }}>
+        <div style={{ display:"flex", gap:"14px", flexWrap:"wrap", justifyContent:side==="right"?"flex-end":"flex-start" }}>
           {[
             { l:"ERA", v:stats.era },
             { l:"WHIP", v:stats.whip },
@@ -99,8 +101,8 @@ function PitcherBox({ name, stats, last3, side }) {
             { l:"IP", v:stats.ip },
           ].map(s => (
             <div key={s.l} style={{ textAlign:"center" }}>
-              <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"15px", fontWeight:"700", color:"var(--teal)" }}>{s.v ?? "—"}</div>
-              <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"8px", color:"var(--muted)", letterSpacing:"1px" }}>{s.l}</div>
+              <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"18px", fontWeight:"700", color:"var(--teal)" }}>{s.v ?? "—"}</div>
+              <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"8px", color:"var(--muted)", letterSpacing:"1.5px", marginTop:"2px" }}>{s.l}</div>
             </div>
           ))}
         </div>
@@ -109,7 +111,7 @@ function PitcherBox({ name, stats, last3, side }) {
       )}
       {last3?.length > 0 && (
         <div style={{ marginTop:"8px" }}>
-          <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"8px", color:"var(--muted)", letterSpacing:"1.5px", marginBottom:"4px" }}>ÚLTIMAS 3 SALIDAS</div>
+          <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"8px", fontWeight:"700", color:"var(--muted)", letterSpacing:"1.5px", marginBottom:"6px" }}>ÚLTIMAS 3 SALIDAS</div>
           <div style={{ display:"flex", gap:"4px", flexDirection:"column", alignItems:side==="right"?"flex-end":"flex-start" }}>
             {last3.map((s, i) => (
               <div key={i} style={{ display:"flex", gap:"6px", alignItems:"center" }}>
@@ -160,6 +162,8 @@ export default function Analizar({ selectedGame, setSelectedGame, todayGames, lo
     setGameIdx(newIdx);
     setSelectedGame(todayGames[newIdx]);
     setError("");
+    setPrediction("");
+    setPreStats(null);
   }
 
   // Sync from selectedGame
@@ -191,19 +195,24 @@ export default function Analizar({ selectedGame, setSelectedGame, todayGames, lo
 
   // Auto-load pre-analysis stats when game selected
   useEffect(() => {
-    if (!homeObj || !awayObj) { setPreStats(null); return; }
+    if (!selectedGame) { setPreStats(null); return; }
+    const homeId = selectedGame.teams?.home?.team?.id;
+    const awayId = selectedGame.teams?.away?.team?.id;
+    const hO = MLB_TEAMS.find(t => t.id === homeId);
+    const aO = MLB_TEAMS.find(t => t.id === awayId);
+    if (!hO || !aO) { setPreStats(null); return; }
     setPreLoading(true);
-    const hPit = selectedGame?.teams?.home?.probablePitcher || null;
-    const aPit = selectedGame?.teams?.away?.probablePitcher || null;
+    const hPit = selectedGame.teams?.home?.probablePitcher || null;
+    const aPit = selectedGame.teams?.away?.probablePitcher || null;
     Promise.allSettled([
-      fetchRecentForm(homeObj.id),
-      fetchRecentForm(awayObj.id),
+      fetchRecentForm(hO.id),
+      fetchRecentForm(aO.id),
       hPit ? fetchPitcherStats(hPit.id) : Promise.resolve(null),
       aPit ? fetchPitcherStats(aPit.id) : Promise.resolve(null),
       hPit ? fetchLast3Starts(hPit.id) : Promise.resolve([]),
       aPit ? fetchLast3Starts(aPit.id) : Promise.resolve([]),
-      fetchH2H(homeObj.id, awayObj.id),
-      fetchWeather(homeObj.id),
+      fetchH2H(hO.id, aO.id),
+      fetchWeather(hO.id),
     ]).then(([r0,r1,r2,r3,r4,r5,r6,r7]) => {
       const v = r => r.status === "fulfilled" ? r.value : null;
       setPreStats({
@@ -214,7 +223,7 @@ export default function Analizar({ selectedGame, setSelectedGame, todayGames, lo
         hPit, aPit,
       });
     }).finally(() => setPreLoading(false));
-  }, [homeObj?.id, awayObj?.id, selectedGame?.gamePk]);
+  }, [selectedGame?.gamePk]);
 
   async function analyze() {
     if (!canAnalyze) return;
@@ -305,7 +314,7 @@ export default function Analizar({ selectedGame, setSelectedGame, todayGames, lo
               const hasCache = gHN && gAN && !!storage.getCachedPred(`${gHN}_${gAN}_${new Date().toDateString()}`);
 
               return (
-                <div key={i} onClick={() => { setSelectedGame(g); setError(""); }}
+                <div key={i} onClick={() => { setSelectedGame(g); setError(""); setPrediction(""); setPreStats(null); }}
                   style={{
                     minWidth:"120px", padding:"10px 12px", cursor:"pointer", flexShrink:0,
                     background: sel ? "rgba(24,132,133,0.07)" : "var(--bg-card)",
@@ -320,7 +329,7 @@ export default function Analizar({ selectedGame, setSelectedGame, todayGames, lo
                   <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"8px", fontWeight:"700", letterSpacing:"1px",
                     color: gLive?"var(--red)":gFin?"var(--muted)":"var(--teal)", marginBottom:"8px" }}>
                     {gLive ? "● EN VIVO" : gFin ? "FINAL" : gTime}
-                    {hasCache && !gLive && <span style={{ marginLeft:"4px", color:"var(--green)" }}>✓</span>}
+                    {hasCache && !gLive && <span style={{ marginLeft:"5px", fontFamily:"'Inter',sans-serif", fontSize:"8px", fontWeight:"800", color:"var(--green)", background:"rgba(132,203,138,0.15)", borderRadius:"3px", padding:"1px 4px" }}>OK</span>}
                   </div>
                   {/* Teams with logos */}
                   {[{id:gAId, abbr:gAA, score:aScore},{id:gHId, abbr:gHA, score:hScore}].map((t,j) => (
@@ -351,7 +360,10 @@ export default function Analizar({ selectedGame, setSelectedGame, todayGames, lo
 
       {/* ── Mini hero (selected game) ── */}
       {selectedGame && (
-        <div style={{
+        <div
+          onMouseEnter={e=>e.currentTarget.querySelectorAll(".analizar-nav").forEach(el=>el.style.opacity="1")}
+          onMouseLeave={e=>e.currentTarget.querySelectorAll(".analizar-nav").forEach(el=>el.style.opacity="0")}
+          style={{
           borderRadius:"var(--r)", marginBottom:"20px", overflow:"hidden",
           background:"linear-gradient(135deg, #0a1e30 0%, #184f6f 60%, #0d3535 100%)",
           padding:"20px 52px 32px", position:"relative",
@@ -375,35 +387,35 @@ export default function Analizar({ selectedGame, setSelectedGame, todayGames, lo
           {/* Flechas navegación */}
           {todayGames.length > 1 && (
             <>
-              <button onClick={() => navigateGame(-1)} style={{
-                position:"absolute", left:"10px", top:"50%", transform:"translateY(-50%)",
-                zIndex:2, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.2)",
-                borderRadius:"50%", width:"34px", height:"34px", cursor:"pointer",
+              <button className="analizar-nav" onClick={() => navigateGame(-1)} style={{
+                position:"absolute", left:"12px", top:"50%", transform:"translateY(-50%)",
+                zIndex:2, background:"rgba(255,255,255,0.10)", border:"1px solid rgba(255,255,255,0.18)",
+                borderRadius:"50%", width:"36px", height:"36px", cursor:"pointer",
                 display:"flex", alignItems:"center", justifyContent:"center",
-                color:"#fff", fontSize:"16px", backdropFilter:"blur(8px)",
-                transition:"background .15s",
+                color:"#fff", backdropFilter:"blur(8px)",
+                opacity:0, transition:"opacity .2s, background .15s",
               }}
               onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.22)"}
-              onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.12)"}
-              >‹</button>
-              <button onClick={() => navigateGame(1)} style={{
-                position:"absolute", right:"10px", top:"50%", transform:"translateY(-50%)",
-                zIndex:2, background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.2)",
-                borderRadius:"50%", width:"34px", height:"34px", cursor:"pointer",
+              onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.10)"}
+              ><ChevronLeft size={18} strokeWidth={2.5} /></button>
+              <button className="analizar-nav" onClick={() => navigateGame(1)} style={{
+                position:"absolute", right:"12px", top:"50%", transform:"translateY(-50%)",
+                zIndex:2, background:"rgba(255,255,255,0.10)", border:"1px solid rgba(255,255,255,0.18)",
+                borderRadius:"50%", width:"36px", height:"36px", cursor:"pointer",
                 display:"flex", alignItems:"center", justifyContent:"center",
-                color:"#fff", fontSize:"16px", backdropFilter:"blur(8px)",
-                transition:"background .15s",
+                color:"#fff", backdropFilter:"blur(8px)",
+                opacity:0, transition:"opacity .2s, background .15s",
               }}
               onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.22)"}
-              onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.12)"}
-              >›</button>
+              onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.10)"}
+              ><ChevronRight size={18} strokeWidth={2.5} /></button>
               {/* Indicador de posición */}
-              <div style={{
+              <div className="analizar-nav" style={{
                 position:"absolute", bottom:"8px", left:"50%", transform:"translateX(-50%)",
-                zIndex:2, display:"flex", gap:"4px",
+                zIndex:2, display:"flex", gap:"4px", opacity:0, transition:"opacity .2s",
               }}>
                 {todayGames.map((_, i) => (
-                  <div key={i} onClick={() => { setGameIdx(i); setSelectedGame(todayGames[i]); setError(""); }}
+                  <div key={i} onClick={() => { setGameIdx(i); setSelectedGame(todayGames[i]); setError(""); setPrediction(""); setPreStats(null); }}
                     style={{
                       width: i===gameIdx ? "16px" : "5px", height:"5px",
                       borderRadius:"3px", cursor:"pointer",
@@ -475,8 +487,11 @@ export default function Analizar({ selectedGame, setSelectedGame, todayGames, lo
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"12px", marginBottom:"20px" }}>
 
           {/* Pitchers */}
-          <div style={{ ...S.card, padding:"16px 18px", gridColumn:"1 / 3" }}>
-            <span style={S.label}>Pitchers probables</span>
+          <div style={{ ...S.card, padding:"18px 20px", gridColumn:"1 / 3" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:"7px", marginBottom:"14px" }}>
+              <BarChart2 size={13} color="var(--teal)" strokeWidth={2.5} />
+              <span style={{ ...S.head, margin:0 }}>Pitchers probables</span>
+            </div>
             {preLoading ? (
               <div style={{ display:"flex", gap:"20px" }}>
                 <div className="skeleton" style={{ flex:1, height:"70px" }} />
@@ -503,27 +518,46 @@ export default function Analizar({ selectedGame, setSelectedGame, todayGames, lo
           </div>
 
           {/* Weather */}
-          <div style={{ ...S.card, padding:"16px 18px" }}>
-            <span style={S.label}>Clima / Estadio</span>
+          <div style={{ ...S.card, padding:"18px 20px" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:"7px", marginBottom:"14px" }}>
+              <Thermometer size={13} color="var(--teal)" strokeWidth={2.5} />
+              <span style={{ ...S.head, margin:0 }}>Clima / Estadio</span>
+            </div>
             {preLoading ? (
               <div className="skeleton" style={{ height:"70px" }} />
             ) : preStats?.weather ? (
               <div>
-                <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"13px", fontWeight:"600", color:"var(--navy)", marginBottom:"8px" }}>
-                  {preStats.weather.stadium}
+                <div style={{ display:"flex", alignItems:"center", gap:"7px", marginBottom:"12px" }}>
+                  <Building2 size={13} color="var(--muted)" strokeWidth={2} />
+                  <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"13px", fontWeight:"700", color:"var(--navy)", letterSpacing:"-0.2px" }}>
+                    {preStats.weather.stadium}
+                  </span>
                 </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:"4px" }}>
-                  <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", color:"var(--text)" }}>
-                    🌡️ {preStats.weather.temp}°F · {preStats.weather.desc}
+                <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+                    <Thermometer size={14} color="var(--teal)" strokeWidth={2} style={{ flexShrink:0 }} />
+                    <div>
+                      <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"13px", fontWeight:"700", color:"var(--text)" }}>{preStats.weather.temp}°F</span>
+                      <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"10px", color:"var(--muted)", marginLeft:"6px" }}>{preStats.weather.desc}</span>
+                    </div>
                   </div>
-                  <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", color:"var(--text)" }}>
-                    💨 {preStats.weather.wind}mph {preStats.weather.wdir}
+                  <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+                    <Wind size={14} color="var(--teal)" strokeWidth={2} style={{ flexShrink:0 }} />
+                    <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"13px", fontWeight:"700", color:"var(--text)" }}>
+                      {preStats.weather.wind}<span style={{ fontSize:"10px", fontWeight:"400", color:"var(--muted)" }}>mph</span>
+                      <span style={{ fontSize:"10px", fontWeight:"400", color:"var(--muted)", marginLeft:"4px" }}>{preStats.weather.wdir}</span>
+                    </span>
                   </div>
-                  <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", color:"var(--text)" }}>
-                    🌧️ {preStats.weather.rain}% lluvia
+                  <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+                    <Droplets size={14} color={parseFloat(preStats.weather.rain)>30?"#3b82f6":"var(--teal)"} strokeWidth={2} style={{ flexShrink:0 }} />
+                    <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"13px", fontWeight:"700", color:"var(--text)" }}>
+                      {preStats.weather.rain}<span style={{ fontSize:"10px", fontWeight:"400", color:"var(--muted)" }}>% lluvia</span>
+                    </span>
                   </div>
                   {preStats.weather.roof && (
-                    <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", color:"var(--teal)", marginTop:"2px" }}>ESTADIO TECHADO</div>
+                    <div style={{ marginTop:"2px", padding:"3px 8px", background:"rgba(24,132,133,0.08)", border:"1px solid rgba(24,132,133,0.2)", borderRadius:"4px", display:"inline-flex", alignItems:"center" }}>
+                      <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", fontWeight:"700", color:"var(--teal)", letterSpacing:"1px" }}>TECHADO</span>
+                    </div>
                   )}
                   {preStats.weather.note && (
                     <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", color:"#f59e0b", marginTop:"2px" }}>{preStats.weather.note}</div>
@@ -536,53 +570,75 @@ export default function Analizar({ selectedGame, setSelectedGame, todayGames, lo
           </div>
 
           {/* Recent form */}
-          <div style={{ ...S.card, padding:"16px 18px" }}>
-            <span style={S.label}>Forma reciente (últ. 10)</span>
+          <div style={{ ...S.card, padding:"18px 20px" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:"7px", marginBottom:"14px" }}>
+              <TrendingUp size={13} color="var(--teal)" strokeWidth={2.5} />
+              <span style={{ ...S.head, margin:0 }}>Forma reciente</span>
+            </div>
             {preLoading ? (
               <div className="skeleton" style={{ height:"60px" }} />
             ) : (
-              <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-                <div>
-                  <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", color:"var(--muted)", marginBottom:"5px" }}>
-                    {MLB_TEAMS.find(t=>t.id===aId)?.abbr}
-                  </div>
-                  <FormDots form={preStats?.awayForm} />
-                </div>
-                <div>
-                  <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", color:"var(--muted)", marginBottom:"5px" }}>
-                    {MLB_TEAMS.find(t=>t.id===hId)?.abbr}
-                  </div>
-                  <FormDots form={preStats?.homeForm} />
-                </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+                {[
+                  { id:aId, form:preStats?.awayForm },
+                  { id:hId, form:preStats?.homeForm },
+                ].map(({ id, form }) => {
+                  const abbr = MLB_TEAMS.find(t=>t.id===id)?.abbr || "?";
+                  const last10 = form?.slice(-10) || [];
+                  const wins = last10.filter(g=>g.won).length;
+                  return (
+                    <div key={id} style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+                      <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"11px", fontWeight:"700", color:"var(--navy)", minWidth:"28px" }}>{abbr}</span>
+                      <div style={{ display:"flex", gap:"3px" }}>
+                        {last10.map((g, i) => (
+                          <div key={i} title={g.won?"V":"D"} style={{
+                            width:"9px", height:"9px", borderRadius:"50%",
+                            background: g.won ? "var(--green)" : "var(--red)",
+                            flexShrink:0,
+                          }} />
+                        ))}
+                      </div>
+                      <span style={{ fontFamily:"'DM Mono',monospace", fontSize:"10px", color:"var(--muted)", marginLeft:"2px" }}>{wins}–{last10.length - wins}</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
 
           {/* H2H */}
-          <div style={{ ...S.card, padding:"16px 18px", gridColumn:"1 / 4" }}>
-            <span style={S.label}>H2H · Últimos enfrentamientos 2025</span>
+          <div style={{ ...S.card, padding:"18px 20px", gridColumn:"1 / 4" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:"7px", marginBottom:"14px" }}>
+              <ArrowRightLeft size={13} color="var(--teal)" strokeWidth={2.5} />
+              <span style={{ ...S.head, margin:0 }}>H2H · Últimos enfrentamientos 2025</span>
+            </div>
             {preLoading ? (
               <div className="skeleton" style={{ height:"40px" }} />
             ) : preStats?.h2h?.length > 0 ? (
-              <div style={{ display:"flex", gap:"8px", overflowX:"auto" }}>
+              <div style={{ display:"flex", gap:"8px", overflowX:"auto", paddingBottom:"2px" }}>
                 {preStats.h2h.slice(-6).map((g, i) => {
                   const hWin = parseInt(g.hs) > parseInt(g.as);
                   return (
                     <div key={i} style={{
-                      flexShrink:0, padding:"8px 12px", borderRadius:"var(--r-sm)",
-                      background:"rgba(0,0,0,0.03)", border:"1px solid var(--border)",
-                      textAlign:"center", minWidth:"80px",
-                    }}>
-                      <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"9px", color:"var(--muted)", marginBottom:"4px" }}>
+                      flexShrink:0, padding:"10px 14px", borderRadius:"var(--r-sm)",
+                      background:"rgba(0,0,0,0.025)", border:"1px solid var(--border-md)",
+                      textAlign:"center", minWidth:"86px",
+                      transition:"border-color .12s, background .12s",
+                    }}
+                    onMouseEnter={e=>{ e.currentTarget.style.background="rgba(24,79,111,0.04)"; e.currentTarget.style.borderColor="rgba(24,132,133,0.3)"; }}
+                    onMouseLeave={e=>{ e.currentTarget.style.background="rgba(0,0,0,0.025)"; e.currentTarget.style.borderColor="var(--border-md)"; }}
+                    >
+                      <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"8px", fontWeight:"600", color:"var(--faint)", marginBottom:"8px", letterSpacing:"0.5px" }}>
                         {g.date?.slice(5)}
                       </div>
-                      <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"12px", fontWeight:"700",
-                        color: hWin?"var(--teal)":"var(--muted)" }}>{g.home}</div>
-                      <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"14px", fontWeight:"700", color:"var(--navy)", margin:"2px 0" }}>
-                        {g.hs}–{g.as}
+                      <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"11px", fontWeight:"700",
+                        color: hWin ? "var(--teal)" : "var(--muted)" }}>{g.home}</div>
+                      <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"16px", fontWeight:"800", color:"var(--navy)", margin:"4px 0", letterSpacing:"-0.5px" }}>
+                        {g.hs}<span style={{ color:"var(--faint)", fontSize:"12px" }}>–</span>{g.as}
                       </div>
-                      <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"12px", fontWeight:"700",
-                        color: !hWin?"var(--teal)":"var(--muted)" }}>{g.away}</div>
+                      <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"11px", fontWeight:"700",
+                        color: !hWin ? "var(--teal)" : "var(--muted)" }}>{g.away}</div>
+                      <div style={{ marginTop:"6px", width:"20px", height:"3px", borderRadius:"2px", background: hWin?"var(--teal)":"var(--red)", margin:"6px auto 0" }} />
                     </div>
                   );
                 })}

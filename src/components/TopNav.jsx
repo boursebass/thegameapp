@@ -1,19 +1,14 @@
+import { Settings } from "lucide-react";
+
 const VIEWS = [
   { id:"dashboard",    label:"Inicio"       },
   { id:"analizar",     label:"Analizar"     },
   { id:"equipos",      label:"Equipos"      },
-  { id:"predicciones", label:"Predicciones" },
-  { id:"bankroll",     label:"Bankroll"     },
+  { id:"picks",        label:"Picks"        },
   { id:"estadisticas", label:"Estadísticas" },
 ];
 
 export default function TopNav({ view, onNav, pendingBets = 0 }) {
-  const SettingsIcon = () => (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-    </svg>
-  );
   return (
     <header style={{
       background: "rgba(24,79,111,0.88)",
@@ -52,27 +47,26 @@ export default function TopNav({ view, onNav, pendingBets = 0 }) {
             const active = view === v.id;
             return (
               <button key={v.id} onClick={() => onNav(v.id)}
+                className={`nav-btn${active ? " nav-active" : ""}`}
                 style={{
                   fontFamily: "'Inter', sans-serif",
                   fontSize: "13px",
-                  fontWeight: active ? "600" : "400",
-                  padding: "0 16px",
+                  width: "110px",
+                  flexShrink: 0,
+                  padding: "0",
                   height: "60px",
                   border: "none",
-                  borderBottom: `2px solid ${active ? "#84cb8a" : "transparent"}`,
-                  background: active ? "rgba(255,255,255,0.08)" : "transparent",
-                  color: active ? "#fff" : "rgba(255,255,255,0.55)",
+                  textAlign: "center",
+                  justifyContent: "center",
+                  borderBottom: `3px solid ${active ? "#84cb8a" : "transparent"}`,
+                  outline: "none",
                   cursor: "pointer",
                   whiteSpace: "nowrap",
                   display: "flex", alignItems: "center", gap: "6px",
-                  transition: "color .15s, background .15s",
-                  backdropFilter: active ? "blur(8px)" : "none",
                 }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.85)"; }}}
-                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.55)"; }}}
               >
                 {v.label}
-                {v.id === "bankroll" && pendingBets > 0 && (
+                {v.id === "picks" && pendingBets > 0 && (
                   <span style={{
                     background: "#c8102e", color: "#fff",
                     borderRadius: "10px", padding: "1px 7px",
@@ -113,7 +107,7 @@ export default function TopNav({ view, onNav, pendingBets = 0 }) {
           onMouseLeave={e => { e.currentTarget.style.background = view === "settings" ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)"; e.currentTarget.style.color = view === "settings" ? "#fff" : "rgba(255,255,255,0.45)"; }}
           title="Ajustes"
           >
-            <SettingsIcon />
+            <Settings size={15} />
           </button>
         </div>
       </div>

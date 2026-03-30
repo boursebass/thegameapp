@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { computeBankroll } from "../lib/math";
 import { fetchStandingsAll } from "../lib/mlb";
 import { MLB_TEAMS } from "../constants/teams";
@@ -14,16 +15,40 @@ function FeaturedGame({ g, onAnalyze }) {
   const [bgImg, setBgImg] = useState(null);
 
   useEffect(() => {
-    if (!g?.gamePk) return;
-    const homeId = g.teams?.home?.team?.id;
-    const awayId = g.teams?.away?.team?.id;
+    const homeId = g?.teams?.home?.team?.id;
+    const awayId = g?.teams?.away?.team?.id;
     const local  = getStadiumPhoto(homeId, awayId);
-    setBgImg(local || null);
+    if (local) { setBgImg(local); return; }
+    // fallback: rotar estadios icónicos según el día
+    const fallbacks = ["/stadiums/LAD.jpg","/stadiums/NYY.jpg","/stadiums/BOS.jpg","/stadiums/CHC.jpg","/stadiums/SF.jpg"];
+    setBgImg(fallbacks[new Date().getDay() % fallbacks.length]);
   }, [g?.gamePk]);
 
+  // Foto de fallback cuando no hay partido — usar un estadio al azar de la biblioteca
+  const FALLBACK_STADIUMS = ["/stadiums/LAD.jpg","/stadiums/NYY.jpg","/stadiums/BOS.jpg","/stadiums/CHC.jpg","/stadiums/SF.jpg"];
+  const fallbackImg = FALLBACK_STADIUMS[new Date().getDay() % FALLBACK_STADIUMS.length];
+
   if (!g) return (
-    <div style={{ ...S.card, height:"360px", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--muted)", fontSize:"13px" }}>
-      Sin partidos hoy
+    <div style={{
+      borderRadius:"var(--r)", overflow:"hidden",
+      background:"linear-gradient(160deg, #0a1e30 0%, #184f6f 55%, #0d3535 100%)",
+      position:"relative", minHeight:"320px",
+      display:"flex", alignItems:"center", justifyContent:"center",
+    }}>
+      <div style={{
+        position:"absolute", inset:0,
+        backgroundImage:`url(${fallbackImg})`,
+        backgroundSize:"cover", backgroundPosition:"center 40%",
+        opacity:0.65,
+      }} />
+      <div style={{
+        position:"absolute", inset:0,
+        background:"linear-gradient(160deg, rgba(6,14,22,0.65) 0%, rgba(10,30,50,0.45) 50%, rgba(4,20,20,0.70) 100%)",
+      }} />
+      <div style={{ position:"relative", zIndex:1, textAlign:"center" }}>
+        <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"16px", fontWeight:"700", color:"#fff" }}>Sin partidos hoy</div>
+        <div style={{ fontFamily:"'DM Mono',monospace", fontSize:"10px", color:"rgba(255,255,255,0.5)", marginTop:"6px", letterSpacing:"1px" }}>DESCANSA LA PELOTA</div>
+      </div>
     </div>
   );
 
@@ -302,6 +327,8 @@ export default function Dashboard({ todayGames, loadingGames, predictions, bankr
     fetch("/api/news").then(r=>r.json()).then(setNews).catch(()=>setNewsError(true));
   }, []);
 
+  const [featuredIdx, setFeaturedIdx] = useState(0);
+
   const stats   = computeBankroll(bankroll?.starting||0, bets);
   const pending = bets.filter(b => !b.result || b.result === "pending");
   const live    = todayGames.filter(g => g.status?.detailedState === "In Progress");
@@ -312,8 +339,13 @@ export default function Dashboard({ todayGames, loadingGames, predictions, bankr
       .sort((a,b)=>new Date(b.gameDate)-new Date(a.gameDate)),
     ...todayGames.filter(g=>["Final","Game Over","Completed Early"].includes(g.status?.detailedState)),
   ];
-  const featured = sorted[0];
-  const rest     = sorted.slice(1);
+  const featured = sorted[featuredIdx] || sorted[0];
+  const rest     = sorted.filter((_, i) => i !== featuredIdx);
+
+  function navFeatured(dir) {
+    if (!sorted.length) return;
+    setFeaturedIdx(i => (i + dir + sorted.length) % sorted.length);
+  }
 
   return (
     <div className="fade-up">
@@ -360,8 +392,47 @@ export default function Dashboard({ todayGames, loadingGames, predictions, bankr
           {/* Featured */}
           {loadingGames
             ? <div className="skeleton" style={{ height:"360px", borderRadius:"var(--r)", marginBottom:"14px" }} />
-            : <div style={{ marginBottom:"14px" }}>
+            : <div style={{ marginBottom:"14px", position:"relative" }}
+                onMouseEnter={e=>{ e.currentTarget.querySelectorAll(".hero-nav").forEach(el=>el.style.opacity="1"); }}
+                onMouseLeave={e=>{ e.currentTarget.querySelectorAll(".hero-nav").forEach(el=>el.style.opacity="0"); }}
+              >
                 <FeaturedGame g={featured} onAnalyze={()=>{ if(featured){onPickGame(featured);onNav("analizar");}}} />
+                {/* Flechas navegación — se muestran solo al hacer hover */}
+                {sorted.length > 1 && (<>
+                  <button className="hero-nav" onClick={e=>{e.stopPropagation();navFeatured(-1);}} style={{
+                    position:"absolute", left:"12px", top:"50%", transform:"translateY(-50%)",
+                    zIndex:10, background:"rgba(255,255,255,0.10)", border:"1px solid rgba(255,255,255,0.18)",
+                    borderRadius:"50%", width:"36px", height:"36px", cursor:"pointer",
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    color:"#fff", backdropFilter:"blur(8px)",
+                    opacity:"0", transition:"opacity .2s, background .15s",
+                  }}
+                  onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.22)"}
+                  onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.10)"}
+                  ><ChevronLeft size={18} strokeWidth={2.5} /></button>
+                  <button className="hero-nav" onClick={e=>{e.stopPropagation();navFeatured(1);}} style={{
+                    position:"absolute", right:"12px", top:"50%", transform:"translateY(-50%)",
+                    zIndex:10, background:"rgba(255,255,255,0.10)", border:"1px solid rgba(255,255,255,0.18)",
+                    borderRadius:"50%", width:"36px", height:"36px", cursor:"pointer",
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    color:"#fff", backdropFilter:"blur(8px)",
+                    opacity:"0", transition:"opacity .2s, background .15s",
+                  }}
+                  onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.22)"}
+                  onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.10)"}
+                  ><ChevronRight size={18} strokeWidth={2.5} /></button>
+                  {/* Dots */}
+                  <div className="hero-nav" style={{ position:"absolute", bottom:"10px", left:"50%", transform:"translateX(-50%)", zIndex:10, display:"flex", gap:"5px", opacity:"0", transition:"opacity .2s" }}>
+                    {sorted.map((_,i) => (
+                      <div key={i} onClick={e=>{e.stopPropagation();setFeaturedIdx(i);}} style={{
+                        width: i===featuredIdx ? "18px" : "6px", height:"6px",
+                        borderRadius:"3px", cursor:"pointer",
+                        background: i===featuredIdx ? "#2dd4bf" : "rgba(255,255,255,0.35)",
+                        transition:"all .2s",
+                      }} />
+                    ))}
+                  </div>
+                </>)}
               </div>
           }
 
